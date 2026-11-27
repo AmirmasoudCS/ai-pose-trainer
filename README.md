@@ -7,6 +7,9 @@ simple posture feedback. It works live with a webcam and on **recorded videos**.
 > Educational demonstration only. The feedback is simple rule-based geometry and is
 > **not** a medical or injury assessment.
 
+## Preview
+
+
 ## Features
 
 - Real-time skeleton overlay on the webcam feed
