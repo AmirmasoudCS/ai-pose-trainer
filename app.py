@@ -1,12 +1,16 @@
-"""AI Personal Trainer - webcam demo (squats and push-ups).
+"""AI Personal Trainer - webcam demo (squats and push-ups) plus recorded-video analysis.
 
-Controls (keyboard or mouse buttons at the top of the window):
+Live mode controls (keyboard or mouse buttons at the top of the window):
   SPACE  start / stop session
   R      reset all counters and the timer
   1 / 2  select Squat / Push-up
+  O      open a recorded video and analyze it (uses the selected exercise)
   F      fullscreen on/off
   M      sound on/off
   Q/ESC  quit
+
+Video only (no webcam needed):
+  python app.py --video path/to/video.mp4 --exercise squat
 """
 import argparse
 import math
@@ -18,6 +22,9 @@ import cv2
 
 from exercises import EXERCISES, RepState
 from pose_estimator import PoseEstimator, draw_skeleton
+from ui import (BTN_ACTIVE, BTN_IDLE, BTN_START, BTN_STOP, GREEN, GREY, ORANGE, WHITE,
+                draw_buttons, fmt_time, panel, text)
+from video_analyzer import pick_video_file, run_video_analysis
 
 try:
     import winsound  # Windows only; the beep is simply skipped elsewhere
@@ -28,18 +35,9 @@ FRAME_WIDTH = 960
 WINDOW = "AI Personal Trainer"
 COUNTDOWN_SECONDS = 3
 
-WHITE = (255, 255, 255)
-GREEN = (120, 220, 90)
-ORANGE = (60, 160, 255)
-GREY = (200, 200, 200)
-BTN_IDLE = (70, 70, 70)
-BTN_ACTIVE = (200, 130, 30)
-BTN_START = (80, 170, 60)
-BTN_STOP = (60, 80, 210)
-
 
 class Trainer:
-    """Holds the session state (selected exercise, counters, timer)."""
+    """Holds the live-session state (selected exercise, counters, timer)."""
 
     def __init__(self):
         self.names = list(EXERCISES)
@@ -52,6 +50,7 @@ class Trainer:
         self.muted = False
         self.fullscreen = False
         self.flash_until = 0.0
+        self.open_video_requested = False
         self.buttons = []           # rebuilt every frame, used by the mouse callback
 
     @property
@@ -88,6 +87,9 @@ class Trainer:
             if name in self.counters and name != self.current:
                 self.current = name
                 self.counter.restart_motion()
+        elif action == "video":
+            # Handled by the main loop (not inside the mouse callback)
+            self.open_video_requested = True
         elif action == "mute":
             self.muted = not self.muted
         elif action == "fullscreen":
@@ -102,11 +104,12 @@ class Trainer:
         buttons, x = [], 315
         for name in self.names:
             color = BTN_ACTIVE if name == self.current else BTN_IDLE
-            buttons.append((name, (x, 15, x + 130, 59), f"select:{name}", color))
-            x += 140
-        buttons.append(("Stop" if self.running else "Start", (x + 10, 15, x + 150, 59),
+            buttons.append((name, (x, 15, x + 110, 59), f"select:{name}", color))
+            x += 120
+        buttons.append(("Stop" if self.running else "Start", (x + 5, 15, x + 105, 59),
                         "toggle", BTN_STOP if self.running else BTN_START))
-        buttons.append(("Reset", (x + 170, 15, x + 290, 59), "reset", BTN_IDLE))
+        buttons.append(("Reset", (x + 115, 15, x + 215, 59), "reset", BTN_IDLE))
+        buttons.append(("Video", (x + 230, 15, x + 330, 59), "video", BTN_IDLE))
         self.buttons = buttons
 
 
@@ -133,35 +136,22 @@ def open_camera(index):
     return cap
 
 
+def resolve_exercise(name):
+    """Accept 'squat', 'push-up', 'pushup', ... (case-insensitive)."""
+    def norm(s):
+        return s.lower().replace("-", "").replace("_", "").replace(" ", "")
+    for exercise in EXERCISES:
+        if norm(exercise) == norm(name):
+            return exercise
+    raise SystemExit(f"Unknown exercise '{name}'. Choose from: {', '.join(EXERCISES)}")
+
+
 # ---- drawing ---------------------------------------------------------------
-def fmt_time(seconds):
-    return f"{int(seconds) // 60:02d}:{int(seconds) % 60:02d}"
-
-
-def panel(frame, x1, y1, x2, y2, alpha=0.55):
-    """Draw a semi-transparent dark rectangle."""
-    overlay = frame.copy()
-    cv2.rectangle(overlay, (x1, y1), (x2, y2), (30, 30, 30), -1)
-    cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
-
-
-def text(frame, msg, pos, scale=0.8, color=WHITE, thickness=2):
-    cv2.putText(frame, msg, pos, cv2.FONT_HERSHEY_SIMPLEX, scale, color, thickness, cv2.LINE_AA)
-
-
-def draw_buttons(frame, buttons):
-    for label, (x1, y1, x2, y2), _action, color in buttons:
-        cv2.rectangle(frame, (x1, y1), (x2, y2), color, -1)
-        cv2.rectangle(frame, (x1, y1), (x2, y2), WHITE, 1)
-        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-        text(frame, label, (x1 + (x2 - x1 - tw) // 2, y1 + (y2 - y1 + th) // 2), 0.7)
-
-
 def draw_hud(frame, tr, state, now, fps):
     h, w = frame.shape[:2]
 
     # Top-left: exercise, reps, timer, status
-    panel(frame, 15, 15, 300, 245)
+    panel(frame, 15, 15, 300, 275)
     text(frame, tr.current.upper(), (30, 50), 0.9, GREY)
     text(frame, "REPS", (30, 82), 0.6, GREY, 1)
     text(frame, str(state.count), (30, 158), 2.8, WHITE, 5)
@@ -169,6 +159,7 @@ def draw_hud(frame, tr, state, now, fps):
     text(frame, "REC" if tr.running else "PAUSED", (130, 198), 0.6, GREEN if tr.running else ORANGE, 2)
     if state.angle is not None:
         text(frame, f"Joint angle: {int(state.angle)} deg", (30, 228), 0.5, GREY, 1)
+    text(frame, f"Half reps: {state.half_reps}", (30, 255), 0.5, ORANGE if state.half_reps else GREY, 1)
 
     # Top buttons
     draw_buttons(frame, tr.buttons)
@@ -176,9 +167,9 @@ def draw_hud(frame, tr, state, now, fps):
     # Bottom: feedback, controls, fps
     panel(frame, 15, h - 120, w - 15, h - 15)
     text(frame, state.feedback, (35, h - 70), 1.1, GREEN if state.feedback_ok else ORANGE, 3)
-    text(frame, "SPACE start/stop   R reset   1/2 exercise   F fullscreen   M sound   Q quit",
+    text(frame, "SPACE start/stop  R reset  1/2 exercise  O video  F fullscreen  M sound  Q quit",
          (35, h - 32), 0.5, GREY, 1)
-    text(frame, f"FPS {fps:.0f}   Sound {'off' if tr.muted else 'on'}", (w - 230, h - 32), 0.5, GREY, 1)
+    text(frame, f"FPS {fps:.0f}  Sound {'off' if tr.muted else 'on'}", (w - 200, h - 32), 0.5, GREY, 1)
 
     # Countdown in the middle of the screen
     left = tr.countdown_left(now)
@@ -192,11 +183,25 @@ def draw_hud(frame, tr, state, now, fps):
         cv2.rectangle(frame, (0, 0), (w - 1, h - 1), GREEN, 14)
 
 
-# ---- main loop -------------------------------------------------------------
+# ---- entry points ----------------------------------------------------------
+def run_video_only(path, exercise):
+    cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
+    try:
+        run_video_analysis(path, exercise, WINDOW)
+    finally:
+        cv2.destroyAllWindows()
+    return 0
+
+
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="AI Personal Trainer")
     parser.add_argument("--camera", type=int, default=0, help="camera index (default 0)")
+    parser.add_argument("--video", help="analyze a recorded video instead of using the webcam")
+    parser.add_argument("--exercise", default="squat", help="exercise for --video: squat or push-up")
     args = parser.parse_args()
+
+    if args.video:
+        return run_video_only(args.video, resolve_exercise(args.exercise))
 
     cap = open_camera(args.camera)
     if not cap.isOpened():
@@ -230,7 +235,7 @@ def main():
 
             counter = tr.counter
             if tr.counting(now):
-                state = counter.update(landmarks)
+                state = counter.update(landmarks, now)
                 if state.count > tr.seen_counts[tr.current]:
                     tr.flash_until = now + 0.35
                     if not tr.muted:
@@ -238,7 +243,7 @@ def main():
                 tr.seen_counts[tr.current] = state.count
             else:
                 msg = "Get ready..." if tr.running else "Press SPACE or click Start"
-                state = RepState(counter.count, counter.stage, None, msg, True)
+                state = RepState(counter.count, counter.stage, None, msg, True, counter.half_reps)
 
             tr.build_buttons()
             draw_hud(frame, tr, state, now, fps)
@@ -257,10 +262,21 @@ def main():
                 tr.do("fullscreen")
             elif key == ord("m"):
                 tr.do("mute")
+            elif key == ord("o"):
+                tr.do("video")
             elif ord("1") <= key <= ord("9"):
                 i = key - ord("1")
                 if i < len(tr.names):
                     tr.do(f"select:{tr.names[i]}")
+
+            if tr.open_video_requested:
+                tr.open_video_requested = False
+                if tr.running:
+                    tr.do("toggle")  # pause the live session
+                path = pick_video_file(tr.current)
+                if path and not run_video_analysis(path, tr.current, WINDOW):
+                    break  # window was closed during the analysis
+                last = time.time()
     finally:
         estimator.close()
         cap.release()
