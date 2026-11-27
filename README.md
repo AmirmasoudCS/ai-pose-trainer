@@ -136,18 +136,34 @@ around never adds repetitions.
 
 ## Project structure
 
+```txt
+📁
+├── 📁 images
+│   ├── 📄 pushup.svg
+│   └── 📄 squat.svg
+├── 📁 models
+│   └── 📄 pose_landmarker_lite.task
+├── 📁 videos
+│   ├── 🎬 push_up_1.mp4
+│   ├── 🖼️ push_up_1_results.png
+│   ├── 🎬 squat_1.mp4
+│   └── 🖼️ squat_1_results.png
+├── 🐍 app.py
+├── 🐍 exercises.py
+├── ⚖️ LICENSE
+├── 🐍 pose_estimator.py
+├── 📘 README.md
+├── 📝 requirements.txt
+├── 🐍 results_screen.py
+├── 🐍 ui.py
+└── 🐍 video_analyzer.py
 ```
-app.py              OpenCV window, buttons, HUD, live loop, command-line options
-pose_estimator.py   MediaPipe PoseLandmarker wrapper + skeleton drawing
-exercises.py        Angle math, squat and push-up state machines, feedback, rep statistics
-video_analyzer.py   Plays and analyzes a recorded video, file picker
-results_screen.py   Results screen (statistics + chart), save as PNG
-ui.py               Shared drawing helpers
-requirements.txt
-images/             squat.svg, pushup.svg (illustrations used in this README)
-```
+> Generated using [Tree Printer](https://github.com/AmirmasoudCS/Tree-Printer.git)
 
 ## Credits
 
 - MediaPipe Pose Landmarker (Google, Apache 2.0)
 - OpenCV
+
+## License
+See [License](./LICENSE).
