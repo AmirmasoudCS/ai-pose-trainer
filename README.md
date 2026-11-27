@@ -19,6 +19,7 @@ py -3.12 -m venv venv
 venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+images/squat.svg    illustration used in this README
 ```
 
 ## Run
@@ -41,6 +42,10 @@ If the wrong camera opens, try `python app.py --camera 1`.
 | R | Reset counter and timer |
 | 1 | Select Squat |
 | Q / ESC | Quit |
+
+## How to do a squat
+
+![Squat demonstration](images/squat.svg)
 
 ## Tips for best results
 
