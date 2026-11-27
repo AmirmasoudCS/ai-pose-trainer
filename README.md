@@ -55,6 +55,10 @@ If the wrong camera opens, try `python app.py --camera 1`.
 
 ![Squat demonstration](images/squat.svg)
 
+## How to do a push-up
+
+![Push-up demonstration](images/pushup.svg)
+
 ## How the counting works
 
 Each exercise uses one joint angle that is smoothed and run through a small state machine.
@@ -91,7 +95,8 @@ app.py              OpenCV window, buttons, HUD, keyboard/mouse controls
 pose_estimator.py   MediaPipe PoseLandmarker wrapper + skeleton drawing
 exercises.py        Angle math, squat and push-up state machines, feedback
 requirements.txt
-images/squat.svg    illustration used in this README
+images/squat.svg    squat illustration used in this README
+images/pushup.svg   push-up illustration used in this README
 ```
 
 ## Credits
