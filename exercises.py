@@ -1,4 +1,5 @@
-"""Exercise logic: joint angles, state machines for rep counting, rule-based feedback.
+"""Exercise logic: joint angles, state machines for rep counting, rule-based feedback
+and per-repetition statistics.
 
 Educational demo only. The feedback is simple geometry, not a medical or
 injury assessment.
@@ -29,45 +30,99 @@ class RepState:
     angle: float | None = None   # main joint angle shown on screen
     feedback: str = "Get in position"
     feedback_ok: bool = True     # True = positive message, False = correction
+    half_reps: int = 0
+
+
+def _mean(values):
+    return sum(values) / len(values) if values else None
 
 
 class Exercise:
     """Shared rep-counting machinery.
 
-    A rep is counted when the main joint angle drops below DOWN_ANGLE and then
-    rises back above UP_ANGLE (hysteresis avoids double counts). If the person
-    starts going down (below START_ANGLE) but returns without reaching
-    DOWN_ANGLE, the rep is not counted and "Go lower" is shown.
+    A full rep is counted when the main joint angle drops below DOWN_ANGLE and then
+    rises back above UP_ANGLE (hysteresis avoids double counts).
+
+    A half rep is a clear attempt (the angle dropped well below START_ANGLE) that
+    returned to the top without reaching DOWN_ANGLE. It is not counted as a rep and
+    shows "Go lower". Tiny wobbles are ignored.
+
+    Every attempt is stored in `self.attempts` so a summary can be shown afterwards.
+    All timestamps come from the `t` argument of update() (seconds), so the same
+    code works for the live webcam (wall clock) and for video files (video time).
     """
     name = "Exercise"
     UP_ANGLE = 160
     START_ANGLE = 150
     DOWN_ANGLE = 100
-    SMOOTHING = 0.4      # 1.0 = no smoothing
+    HALF_REP_MARGIN = 15  # must go this far below START_ANGLE to count as a half rep
+    SMOOTHING = 0.4       # 1.0 = no smoothing
 
     SIDES = ()    # one tuple of landmark indices per body side
     VISIBLE = ()  # positions inside those tuples that must be visible
 
     def __init__(self):
         self.count = 0
+        self.attempts = []
+        self._t = time.time()
         self.restart_motion()
 
     def reset(self):
-        """Clear the repetition count and any movement in progress."""
+        """Clear the repetition count, statistics and any movement in progress."""
         self.count = 0
+        self.attempts = []
         self.restart_motion()
 
     def restart_motion(self):
-        """Forget the movement in progress but keep the count."""
+        """Forget the movement in progress but keep the count and statistics."""
         self.stage = "up"
         self._angle = None
         self._descending = False
         self._sticky = None  # (message, ok, expires_at)
+        self._rep_start = None
+        self._min_angle = None
+        self._issue = False
 
-    def update(self, lm):
+    def update(self, lm, t=None):
         raise NotImplementedError
 
+    @property
+    def half_reps(self):
+        return sum(1 for a in self.attempts if not a["full"])
+
+    def finish(self, t=None):
+        """Call when a video/session ends. A clear movement still in progress is
+        stored as a half rep because it was never completed."""
+        if t is not None:
+            self._t = t
+        if (self._descending and self._min_angle is not None
+                and self._min_angle < self.START_ANGLE - self.HALF_REP_MARGIN):
+            self._record(full=False)
+        self.restart_motion()
+
+    def summary(self):
+        full = [a for a in self.attempts if a["full"]]
+        times = [a["duration"] for a in full]
+        depths = [a["min_angle"] for a in full]
+        return {
+            "exercise": self.name,
+            "reps": len(full),
+            "half_reps": len(self.attempts) - len(full),
+            "form_issue_reps": sum(1 for a in full if a["form_issue"]),
+            "good_form_reps": sum(1 for a in full if not a["form_issue"]),
+            "avg_rep_time": _mean(times),
+            "fastest_rep": min(times) if times else None,
+            "slowest_rep": max(times) if times else None,
+            "avg_depth": _mean(depths),   # smaller angle = deeper
+            "best_depth": min(depths) if depths else None,
+            "down_angle": self.DOWN_ANGLE,
+            "attempts": list(self.attempts),
+        }
+
     # ---- helpers for subclasses -------------------------------------------
+    def _begin_frame(self, t):
+        self._t = time.time() if t is None else t
+
     def _pick_side(self, lm):
         """Use the body side the camera sees best; None if neither is visible."""
         best, best_vis = None, 0.0
@@ -84,30 +139,55 @@ class Exercise:
         return self._angle
 
     def _set_sticky(self, msg, ok, seconds=1.5):
-        self._sticky = (msg, ok, time.time() + seconds)
+        self._sticky = (msg, ok, self._t + seconds)
 
     def _sticky_feedback(self):
-        if self._sticky and time.time() < self._sticky[2]:
+        if self._sticky and self._t < self._sticky[2]:
             return self._sticky[0], self._sticky[1]
         return None
+
+    def _flag_issue(self):
+        """Remember that a form warning appeared during the current rep."""
+        if self._descending or self.stage == "down":
+            self._issue = True
+
+    def _record(self, full):
+        self.attempts.append({
+            "start": self._rep_start,
+            "end": self._t,
+            "duration": self._t - self._rep_start,
+            "min_angle": self._min_angle,
+            "full": full,
+            "form_issue": self._issue,
+        })
 
     def _track_reps(self, angle):
         if self.stage == "up":
             if angle < self.START_ANGLE:
-                self._descending = True
+                if not self._descending:
+                    self._descending = True
+                    self._rep_start = self._t
+                    self._min_angle = angle
+                    self._issue = False
+                self._min_angle = min(self._min_angle, angle)
             if angle < self.DOWN_ANGLE:
                 self.stage = "down"
             elif self._descending and angle > self.UP_ANGLE:
                 self._descending = False
-                self._set_sticky("Go lower", False)
-        elif angle > self.UP_ANGLE:
-            self.stage = "up"
-            self._descending = False
-            self.count += 1
-            self._set_sticky("Good rep!", True, 1.0)
+                if self._min_angle < self.START_ANGLE - self.HALF_REP_MARGIN:
+                    self._record(full=False)
+                    self._set_sticky("Go lower", False)
+        else:  # stage == "down"
+            self._min_angle = min(self._min_angle, angle)
+            if angle > self.UP_ANGLE:
+                self.stage = "up"
+                self._descending = False
+                self.count += 1
+                self._record(full=True)
+                self._set_sticky("Good rep!", True, 1.0)
 
     def _state(self, angle, msg, ok):
-        return RepState(self.count, self.stage, angle, msg, ok)
+        return RepState(self.count, self.stage, angle, msg, ok, self.half_reps)
 
 
 class SquatCounter(Exercise):
@@ -121,7 +201,8 @@ class SquatCounter(Exercise):
     SIDES = ((11, 23, 25, 27), (12, 24, 26, 28))  # shoulder, hip, knee, ankle
     VISIBLE = (1, 2, 3)
 
-    def update(self, lm):
+    def update(self, lm, t=None):
+        self._begin_frame(t)
         if lm is None:
             return self._state(None, "No person detected", False)
         side = self._pick_side(lm)
@@ -135,11 +216,14 @@ class SquatCounter(Exercise):
         # Torso lean: angle of the hip->shoulder line from vertical
         dx, dy = shoulder[0] - hip[0], shoulder[1] - hip[1]
         lean = math.degrees(math.atan2(abs(dx), abs(dy) + 1e-6))
+        lean_bad = (self._descending or self.stage == "down") and lean > self.MAX_TORSO_LEAN
+        if lean_bad:
+            self._flag_issue()
 
         sticky = self._sticky_feedback()
         if sticky:
             msg, ok = sticky
-        elif self._descending and lean > self.MAX_TORSO_LEAN:
+        elif lean_bad:
             msg, ok = "Keep your chest up", False
         elif self.stage == "down":
             msg, ok = "Good depth - now stand up", True
@@ -167,7 +251,8 @@ class PushUpCounter(Exercise):
     SIDES = ((11, 13, 15, 23, 25, 27), (12, 14, 16, 24, 26, 28))
     VISIBLE = (0, 1, 2, 3)  # shoulder, elbow, wrist, hip
 
-    def update(self, lm):
+    def update(self, lm, t=None):
+        self._begin_frame(t)
         if lm is None:
             return self._state(None, "No person detected", False)
         side = self._pick_side(lm)
@@ -192,6 +277,8 @@ class PushUpCounter(Exercise):
         aligned = True
         if lower is not None:
             aligned = calculate_angle(shoulder, hip, lower) >= self.MIN_BODY_ANGLE
+        if not aligned:
+            self._flag_issue()
 
         sticky = self._sticky_feedback()
         if sticky:
