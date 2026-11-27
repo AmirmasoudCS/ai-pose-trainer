@@ -10,28 +10,18 @@ simple posture feedback. It works live with a webcam and on **recorded videos**.
 ## Preview
 
 <div align="center">
-  <table>
-    <tr>
-      <th>Push-up Analysis</th>
-      <th>Squat Analysis</th>
-    </tr>
-    <tr>
-      <td align="center">
-        <img src="images/push_up_preview.png" alt="Push-up detection preview" width="100%">
-      </td>
-      <td align="center">
-        <img src="images/squat_preview.png" alt="Squat detection preview" width="100%">
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <img src="videos/push_up_1_results.png" alt="Push-up analysis results" width="100%">
-      </td>
-      <td align="center">
-        <img src="videos/squat_1_results.png" alt="Squat analysis results" width="100%">
-      </td>
-    </tr>
-  </table>
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <div style="width: 48%; min-width: 300px;">
+      <h3>Push-up Analysis</h3>
+      <img src="images/push_up_preview.png" alt="Push-up detection preview" width="100%">
+      <img src="videos/push_up_1_results.png" alt="Push-up analysis results" width="100%">
+    </div>
+    <div style="width: 48%; min-width: 300px;">
+      <h3>Squat Analysis</h3>
+      <img src="images/squat_preview.png" alt="Squat detection preview" width="100%">
+      <img src="videos/squat_1_results.png" alt="Squat analysis results" width="100%">
+    </div>
+  </div>
 </div>
 
 ## Features
