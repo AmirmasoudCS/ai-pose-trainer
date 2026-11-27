@@ -9,6 +9,30 @@ simple posture feedback. It works live with a webcam and on **recorded videos**.
 
 ## Preview
 
+<div align="center">
+  <table>
+    <tr>
+      <th>Push-up Analysis</th>
+      <th>Squat Analysis</th>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="images/push_up_preview.png" alt="Push-up detection preview" width="100%">
+      </td>
+      <td align="center">
+        <img src="images/squat_preview.png" alt="Squat detection preview" width="100%">
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="videos/push_up_1_results.png" alt="Push-up analysis results" width="100%">
+      </td>
+      <td align="center">
+        <img src="videos/squat_1_results.png" alt="Squat analysis results" width="100%">
+      </td>
+    </tr>
+  </table>
+</div>
 
 ## Features
 
