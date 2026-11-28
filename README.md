@@ -170,33 +170,43 @@ around never adds repetitions.
 ## Project structure
 
 ```txt
- 
-├── 📁 data
-│   └── 🧩 profiles.json
-├── 📁 images
-│   ├── 🖼️ push_up_preview.png
-│   ├── 📄 pushup.svg
-│   ├── 📄 squat.svg
-│   └── 🖼️ squat_preview.png
-├── 📁 models
-│   └── 📄 pose_landmarker_lite.task
-├── 📁 videos
-│   ├── 🎬 push_up_1.mp4
-│   ├── 🖼️ push_up_1_results.png
-│   ├── 🎬 squat_1.mp4
-│   └── 🖼️ squat_1_results.png
-├── 🐍 app.py
-├── 🐍 exercises.py
+📁
+├── 📁 assets
+│   ├── 📁 images
+│   │   ├── 🖼️ push_up_preview.png
+│   │   ├── 📄 pushup.svg
+│   │   ├── 📄 squat.svg
+│   │   └── 🖼️ squat_preview.png
+│   └── 📁 samples
+│       ├── 🎬 push_up_1.mp4
+│       ├── 🖼️ push_up_1_results.png
+│       ├── 🎬 squat_1.mp4
+│       └── 🖼️ squat_1_results.png
+├── 📁 pose_trainer
+│   ├── 📁 core
+│   │   ├── 🐍 __init__.py
+│   │   ├── 🐍 exercises.py
+│   │   └── 🐍 pose_estimator.py
+│   ├── 📁 screens
+│   │   ├── 🐍 __init__.py
+│   │   ├── 🐍 draw.py
+│   │   ├── 🐍 profile_dialog.py
+│   │   ├── 🐍 progress.py
+│   │   └── 🐍 results.py
+│   ├── 📁 storage
+│   │   ├── 🐍 __init__.py
+│   │   └── 🐍 profiles.py
+│   ├── 🐍 __init__.py
+│   ├── 🐍 app.py
+│   ├── 🐍 paths.py
+│   └── 🐍 video_analyzer.py
+├── 📁 tests
+│   ├── 🐍 test_exercises.py
+│   └── 🐍 test_profiles.py
 ├── ⚖️ LICENSE
-├── 🐍 pose_estimator.py
-├── 🐍 profile_dialog.py
-├── 🐍 profiles.py
-├── 🐍 progress_screen.py
+├── 🐍 main.py
 ├── 📘 README.md
-├── 📝 requirements.txt
-├── 🐍 results_screen.py
-├── 🐍 ui.py
-└── 🐍 video_analyzer.py
+└── 📝 requirements.txt
 ```
 > Generated using [Tree Printer](https://github.com/AmirmasoudCS/Tree-Printer.git)
 
