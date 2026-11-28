@@ -8,6 +8,8 @@ simple posture feedback. It works live with a webcam and on **recorded videos**,
 > Educational demonstration only. The feedback is simple rule-based geometry and is
 > **not** a medical or injury assessment.
 
+🌐 **Live web app (laptop and phone): [https://amirmasoudcs.github.io/ai-pose-trainer/](https://amirmasoudcs.github.io/ai-pose-trainer/)**
+
 ## Preview
 
 <div align="center">
@@ -39,11 +41,18 @@ simple posture feedback. It works live with a webcam and on **recorded videos**,
 
 ## Web app (phone and laptop)
 
-The `web/` folder contains the same trainer as a **website that runs in the browser**, so it
-works on a phone too. Pose detection happens on the device itself (no backend, no upload),
-and it can be hosted for free with GitHub Pages. It currently offers the camera view, skeleton,
-squat and push-up counting and feedback; timed modes, profiles and video analysis are coming.
-See [web/README.md](web/README.md) for how to run and publish it.
+**Open it here: [https://amirmasoudcs.github.io/ai-pose-trainer/](https://amirmasoudcs.github.io/ai-pose-trainer/)**
+
+It is the same trainer as a **website that runs in the browser**, so it works on a phone too.
+Pose detection happens on your own device (no backend, no upload), and it is hosted for free
+with GitHub Pages. It currently offers the camera view, skeleton, squat and push-up counting
+and feedback; timed modes, profiles and video analysis are coming.
+
+1. Open the link in Chrome, Edge, Firefox or Safari (on a phone too).
+2. Tap **Start camera** and allow camera access. The first visit downloads the pose model, so it needs internet.
+3. Choose **Squat** or **Push-up**, prop the device up, and tap **Start**.
+
+The source is in the `web/` folder; see [web/README.md](web/README.md) to run or publish your own copy.
 
 ## Installation (Windows 10, Python 3.12)
 
