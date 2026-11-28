@@ -170,13 +170,14 @@ around never adds repetitions.
 ## Project structure
 
 ```txt
-📁
-├── 📁 data                      (created at runtime, ignored by Git)
-│   ├── 📁 results
-│   └── 📄 profiles.json
+ 
+├── 📁 data
+│   └── 🧩 profiles.json
 ├── 📁 images
+│   ├── 🖼️ push_up_preview.png
 │   ├── 📄 pushup.svg
-│   └── 📄 squat.svg
+│   ├── 📄 squat.svg
+│   └── 🖼️ squat_preview.png
 ├── 📁 models
 │   └── 📄 pose_landmarker_lite.task
 ├── 📁 videos
@@ -184,18 +185,18 @@ around never adds repetitions.
 │   ├── 🖼️ push_up_1_results.png
 │   ├── 🎬 squat_1.mp4
 │   └── 🖼️ squat_1_results.png
-├── 🐍 app.py                    live loop, buttons, sessions and modes
-├── 🐍 exercises.py              angles, squat / push-up logic, rep statistics
+├── 🐍 app.py
+├── 🐍 exercises.py
 ├── ⚖️ LICENSE
-├── 🐍 pose_estimator.py         MediaPipe wrapper and skeleton drawing
-├── 🐍 profile_dialog.py         window to select, create and delete profiles
-├── 🐍 profiles.py               profile storage and workout records
-├── 🐍 progress_screen.py        progress history screen
+├── 🐍 pose_estimator.py
+├── 🐍 profile_dialog.py
+├── 🐍 profiles.py
+├── 🐍 progress_screen.py
 ├── 📘 README.md
 ├── 📝 requirements.txt
-├── 🐍 results_screen.py         results screen after a session or video
-├── 🐍 ui.py                     shared drawing helpers
-└── 🐍 video_analyzer.py         recorded-video analysis and file picker
+├── 🐍 results_screen.py
+├── 🐍 ui.py
+└── 🐍 video_analyzer.py
 ```
 > Generated using [Tree Printer](https://github.com/AmirmasoudCS/Tree-Printer.git)
 
