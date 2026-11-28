@@ -8,7 +8,7 @@ import os
 import cv2
 import numpy as np
 
-from ui import GREEN, GREY, ORANGE, RED, WHITE, YELLOW, fmt_time, panel, text, text_width
+from ui import GREEN, GREY, ORANGE, RED, WHITE, YELLOW, ascii_text, fmt_time, panel, text, text_width
 
 W, H = 960, 540
 CHART_MAX_BARS = 30
@@ -37,7 +37,7 @@ def _rows(results):
         ("Rep completion rate", rate, WHITE),
         ("Reps with good form", f"{s['good_form_reps']} of {reps}", WHITE),
         ("Reps with form warnings", str(s["form_issue_reps"]), YELLOW if s["form_issue_reps"] else WHITE),
-        ("Video length", fmt_time(duration), WHITE),
+        (results.get("length_label", "Video length"), fmt_time(duration), WHITE),
         ("Reps per minute", rpm, WHITE),
         ("Average time per rep", _sec(s["avg_rep_time"]), WHITE),
         ("Fastest / slowest rep", fast_slow, WHITE),
@@ -95,8 +95,18 @@ def draw_results(results, message=""):
     img = np.full((H, W, 3), (38, 38, 38), np.uint8)
     s = results["summary"]
 
-    text(img, f"RESULTS - {s['exercise'].upper()}", (30, 48), 1.1, WHITE, 3)
-    text(img, results["video_name"], (30, 74), 0.5, GREY, 1)
+    title = f"RESULTS - {s['exercise'].upper()}"
+    if results.get("mode_label"):
+        title += f" ({results['mode_label']})"
+    text(img, title, (30, 48), 1.1, WHITE, 3)
+    text(img, ascii_text(results["video_name"]), (30, 74), 0.5, GREY, 1)
+    note = results.get("note")
+    if note:
+        kind = results.get("note_kind")
+        color = {"best": YELLOW, "warn": ORANGE}.get(kind, GREEN)
+        scale = 0.8 if kind == "best" else 0.55
+        note = ascii_text(note)
+        text(img, note, (W - 30 - text_width(note, scale, 2), 74), scale, color, 2)
 
     panel(img, 20, 90, 470, 495, alpha=0.5)
     y = 125
@@ -116,13 +126,14 @@ def draw_results(results, message=""):
 
 
 def save_results_image(results, img):
-    """Save next to the video (fallback: current folder). Returns the saved path or None."""
-    stem = os.path.splitext(results["video_path"])[0] + "_results.png"
+    """Save next to the video / in data/results. Returns the saved path or None."""
+    base = results.get("image_base") or os.path.splitext(results.get("video_path", "results"))[0]
     ok, buf = cv2.imencode(".png", img)  # imencode + file write also works with non-ASCII paths
     if not ok:
         return None
-    for path in (stem, os.path.basename(stem)):
+    for path in (base + "_results.png", os.path.basename(base) + "_results.png"):
         try:
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
             with open(path, "wb") as f:
                 f.write(buf.tobytes())
             return path
