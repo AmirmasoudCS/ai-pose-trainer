@@ -53,6 +53,7 @@ const app = {
   lastFrameMs: 0,
   fps: 0,
   flashTimer: null,
+  statusTimer: null,
 };
 app.counter = new EXERCISES[app.exerciseName]();
 
@@ -117,12 +118,25 @@ function explainCameraError(error) {
   }
 }
 
-async function openStream(facing) {
+/**
+ * Open the camera. `exact` insists on that camera (used when flipping); otherwise it is
+ * only a preference, so a laptop with one webcam still works.
+ */
+async function openStream(facing, exact = false) {
+  // Release the current camera FIRST: many phones cannot open a second camera while
+  // the first one is still running.
+  if (app.stream) {
+    app.stream.getTracks().forEach((track) => track.stop());
+    app.stream = null;
+  }
   const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
+    video: {
+      facingMode: exact ? { exact: facing } : { ideal: facing },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
     audio: false,
   });
-  if (app.stream) app.stream.getTracks().forEach((track) => track.stop());
   app.stream = stream;
   el.video.srcObject = stream;
   await el.video.play();
@@ -186,19 +200,31 @@ async function enableCamera() {
   requestAnimationFrame(loop);
 }
 
+/** Show a short message in the status badge, then go back to the normal status. */
+function notify(message, ms = 3500) {
+  setStatus(message);
+  clearTimeout(app.statusTimer);
+  app.statusTimer = setTimeout(() => setStatus(`Ready (${app.detector.delegate})`), ms);
+}
+
 async function flipCamera() {
   if (app.running) return;
   const previous = app.facing;
+  const target = previous === "user" ? "environment" : "user";
   el.btnFlip.disabled = true;
+  setStatus("Switching camera...");
   try {
-    await openStream(previous === "user" ? "environment" : "user");
+    await openStream(target, true);
+    notify(target === "user" ? "Front camera" : "Back camera");
   } catch (error) {
-    setStatus("Could not switch camera");
+    // Go back to the camera that was working, then explain what happened.
     try {
       await openStream(previous);
     } catch (_ignored) {
-      /* keep whatever stream we had */
+      /* keep going: the message below tells the user */
     }
+    const noOtherCamera = error && (error.name === "OverconstrainedError" || error.name === "NotFoundError");
+    notify(noOtherCamera ? "This device has no other camera" : "Could not switch camera");
   } finally {
     el.btnFlip.disabled = false;
   }
