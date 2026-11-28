@@ -11,9 +11,8 @@ import os
 import uuid
 from datetime import datetime
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-PROFILES_PATH = os.path.join(DATA_DIR, "profiles.json")
-RESULTS_DIR = os.path.join(DATA_DIR, "results")
+from pose_trainer.paths import PROFILES_PATH
+
 MAX_NAME_LEN = 20
 
 # mode key -> (label, duration in seconds or None for free practice)

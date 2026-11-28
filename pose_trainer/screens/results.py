@@ -8,7 +8,7 @@ import os
 import cv2
 import numpy as np
 
-from ui import GREEN, GREY, ORANGE, RED, WHITE, YELLOW, ascii_text, fmt_time, panel, text, text_width
+from pose_trainer.screens.draw import GREEN, GREY, ORANGE, RED, WHITE, YELLOW, ascii_text, fmt_time, panel, text, text_width
 
 W, H = 960, 540
 CHART_MAX_BARS = 30

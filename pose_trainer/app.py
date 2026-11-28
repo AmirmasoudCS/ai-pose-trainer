@@ -16,7 +16,7 @@ Controls (keyboard or mouse buttons):
   Q/ESC  quit
 
 Video only (no webcam needed):
-  python app.py --video path/to/video.mp4 --exercise squat [--profile Name]
+  python main.py --video path/to/video.mp4 --exercise squat [--profile Name]
 """
 import argparse
 import math
@@ -29,15 +29,16 @@ from datetime import datetime
 
 import cv2
 
-from exercises import EXERCISES, RepState
-from pose_estimator import PoseEstimator, draw_skeleton
-from profile_dialog import manage_profiles
-from profiles import MODES, RESULTS_DIR, ProfileStore, mode_label, record_results
-from progress_screen import show_progress
-from results_screen import show_results
-from ui import (BTN_ACTIVE, BTN_ATTN, BTN_IDLE, BTN_START, BTN_STOP, GREEN, GREY, ORANGE, WHITE,
+from pose_trainer.core.exercises import EXERCISES, RepState
+from pose_trainer.core.pose_estimator import PoseEstimator, draw_skeleton
+from pose_trainer.screens.profile_dialog import manage_profiles
+from pose_trainer.paths import RESULTS_DIR
+from pose_trainer.storage.profiles import MODES, ProfileStore, mode_label, record_results
+from pose_trainer.screens.progress import show_progress
+from pose_trainer.screens.results import show_results
+from pose_trainer.screens.draw import (BTN_ACTIVE, BTN_ATTN, BTN_IDLE, BTN_START, BTN_STOP, GREEN, GREY, ORANGE, WHITE,
                 ascii_text, draw_buttons, fmt_time, panel, text)
-from video_analyzer import pick_video_file, run_video_analysis
+from pose_trainer.video_analyzer import pick_video_file, run_video_analysis
 
 try:
     import winsound  # Windows only; the beep is simply skipped elsewhere

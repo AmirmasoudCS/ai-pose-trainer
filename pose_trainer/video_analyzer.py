@@ -11,11 +11,11 @@ import time
 import cv2
 import numpy as np
 
-from exercises import EXERCISES
-from pose_estimator import PoseEstimator, draw_skeleton
-from profiles import record_results
-from results_screen import show_results
-from ui import GREEN, GREY, ORANGE, WHITE, fmt_time, panel, text
+from pose_trainer.core.exercises import EXERCISES
+from pose_trainer.core.pose_estimator import PoseEstimator, draw_skeleton
+from pose_trainer.storage.profiles import record_results
+from pose_trainer.screens.results import show_results
+from pose_trainer.screens.draw import GREEN, GREY, ORANGE, WHITE, fmt_time, panel, text
 
 CANVAS_W, CANVAS_H = 960, 540
 VIDEO_TYPES = [
@@ -30,7 +30,7 @@ def pick_video_file(exercise_name):
         import tkinter as tk
         from tkinter import filedialog
     except ImportError:
-        print("tkinter is not available. Use: python app.py --video path\\to\\video.mp4")
+        print("tkinter is not available. Use: python main.py --video path\\to\\video.mp4")
         return None
     root = tk.Tk()
     root.withdraw()

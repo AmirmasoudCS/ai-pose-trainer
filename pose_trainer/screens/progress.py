@@ -8,9 +8,9 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from exercises import EXERCISES
-from profiles import mode_label
-from ui import GREEN, GREY, ORANGE, WHITE, YELLOW, ascii_text, panel, text, text_width
+from pose_trainer.core.exercises import EXERCISES
+from pose_trainer.storage.profiles import mode_label
+from pose_trainer.screens.draw import GREEN, GREY, ORANGE, WHITE, YELLOW, ascii_text, panel, text, text_width
 
 W, H = 960, 540
 MODE_FILTERS = [None, "free", "30s", "60s"]   # None = all modes

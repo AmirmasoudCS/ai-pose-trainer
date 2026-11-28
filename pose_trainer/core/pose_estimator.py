@@ -10,11 +10,13 @@ import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
+from pose_trainer.paths import MODELS_DIR
+
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
     "pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
 )
-MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+MODEL_DIR = MODELS_DIR
 MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker_lite.task")
 
 # Landmark index pairs forming the skeleton (body only, no face details).
