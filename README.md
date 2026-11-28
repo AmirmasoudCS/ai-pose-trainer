@@ -37,6 +37,14 @@ simple posture feedback. It works live with a webcam and on **recorded videos**,
 - Clickable buttons and keyboard shortcuts, countdown, beep on each rep, fullscreen
 - Runs locally on CPU, offline after the first start (no cloud, no database)
 
+## Web app (phone and laptop)
+
+The `web/` folder contains the same trainer as a **website that runs in the browser**, so it
+works on a phone too. Pose detection happens on the device itself (no backend, no upload),
+and it can be hosted for free with GitHub Pages. It currently offers the camera view, skeleton,
+squat and push-up counting and feedback; timed modes, profiles and video analysis are coming.
+See [web/README.md](web/README.md) for how to run and publish it.
+
 ## Installation (Windows 10, Python 3.12)
 
 ```
@@ -49,19 +57,19 @@ pip install -r requirements.txt
 ## Run
 
 ```
-python app.py
+python main.py
 ```
 
 Analyze a recorded video without a webcam (`--profile` is optional):
 
 ```
-python app.py --video C:\videos\my_squats.mp4 --exercise squat
-python app.py --video C:\videos\my_pushups.mp4 --exercise push-up --profile Ali
+python main.py --video C:\videos\my_squats.mp4 --exercise squat
+python main.py --video C:\videos\my_pushups.mp4 --exercise push-up --profile Ali
 ```
 
 On the first run the app downloads the pose model (~5 MB) into `models/`; afterwards it
 works offline. If the download fails, the error message shows the URL and where to save
-the file manually. If the wrong camera opens, try `python app.py --camera 1`.
+the file manually. If the wrong camera opens, try `python main.py --camera 1`.
 
 ## Quick start
 
@@ -171,44 +179,71 @@ around never adds repetitions.
 
 ```txt
 📁
+├── 📁 .github/workflows         publishes the web app to GitHub Pages
+│   └── 📄 pages.yml
 ├── 📁 assets
-│   ├── 📁 images
-│   │   ├── 🖼️ push_up_preview.png
+│   ├── 📁 images                    README illustrations and previews
+│   │   ├── 📄 push_up_preview.png
 │   │   ├── 📄 pushup.svg
 │   │   ├── 📄 squat.svg
-│   │   └── 🖼️ squat_preview.png
-│   └── 📁 samples
+│   │   └── 📄 squat_preview.png
+│   └── 📁 samples                   example videos and their results
 │       ├── 🎬 push_up_1.mp4
 │       ├── 🖼️ push_up_1_results.png
 │       ├── 🎬 squat_1.mp4
 │       └── 🖼️ squat_1_results.png
-├── 📁 pose_trainer
-│   ├── 📁 core
-│   │   ├── 🐍 __init__.py
-│   │   ├── 🐍 exercises.py
-│   │   └── 🐍 pose_estimator.py
-│   ├── 📁 screens
-│   │   ├── 🐍 __init__.py
-│   │   ├── 🐍 draw.py
-│   │   ├── 🐍 profile_dialog.py
-│   │   ├── 🐍 progress.py
-│   │   └── 🐍 results.py
+├── 📁 data                          created at runtime, ignored by Git
+│   ├── 📁 results
+│   └── 📄 profiles.json
+├── 📁 models                        pose model, downloaded on first run
+│   └── 📄 pose_landmarker_lite.task
+├── 📁 pose_trainer                  the application package
+│   ├── 📁 core                      pose detection and exercise logic
+│   │   ├── 🐍 exercises.py          angles, squat / push-up rules, rep statistics
+│   │   └── 🐍 pose_estimator.py     MediaPipe wrapper and skeleton drawing
+│   ├── 📁 screens                   everything drawn on screen
+│   │   ├── 🐍 draw.py               shared drawing helpers
+│   │   ├── 🐍 profile_dialog.py     window to select, create and delete profiles
+│   │   ├── 🐍 progress.py           progress history screen
+│   │   └── 🐍 results.py            results screen after a session or video
 │   ├── 📁 storage
-│   │   ├── 🐍 __init__.py
-│   │   └── 🐍 profiles.py
-│   ├── 🐍 __init__.py
-│   ├── 🐍 app.py
-│   ├── 🐍 paths.py
-│   └── 🐍 video_analyzer.py
-├── 📁 tests
+│   │   └── 🐍 profiles.py           profile storage and workout records
+│   ├── 🐍 app.py                    live loop, buttons, sessions and modes
+│   ├── 🐍 paths.py                  project folders
+│   └── 🐍 video_analyzer.py         recorded-video analysis and file picker
+├── 📁 tests                         unit tests (no camera needed)
 │   ├── 🐍 test_exercises.py
 │   └── 🐍 test_profiles.py
+├── 📁 web                           browser version (phone and laptop)
+│   ├── 📁 css
+│   │   └── 📄 style.css
+│   ├── 📁 js
+│   │   ├── 📄 draw.js               skeleton drawing
+│   │   ├── 📄 exercises.js          counting logic (port of exercises.py)
+│   │   ├── 📄 main.js               camera, main loop, display
+│   │   └── 📄 pose.js               MediaPipe PoseLandmarker in the browser
+│   ├── 📁 tests
+│   │   └── 📄 exercises.test.mjs
+│   ├── 📄 index.html
+│   └── 📘 README.md
 ├── ⚖️ LICENSE
-├── 🐍 main.py
+├── 🐍 main.py                       start the app: python main.py
 ├── 📘 README.md
 └── 📝 requirements.txt
 ```
 > Generated using [Tree Printer](https://github.com/AmirmasoudCS/Tree-Printer.git)
+
+## Tests
+
+The counting logic and the profile storage are tested with simulated body landmarks, so no
+camera or MediaPipe is needed:
+
+```
+pip install pytest
+python -m pytest
+```
+
+(The test files also run directly, e.g. `python tests/test_exercises.py`.)
 
 ## Credits
 
