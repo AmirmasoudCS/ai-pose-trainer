@@ -12,6 +12,12 @@ BTN_IDLE = (70, 70, 70)
 BTN_ACTIVE = (200, 130, 30)
 BTN_START = (80, 170, 60)
 BTN_STOP = (60, 80, 210)
+BTN_ATTN = (30, 120, 230)  # draws attention (e.g. 'create a profile')
+
+
+def ascii_text(value):
+    """OpenCV's built-in font only draws English characters; others become '?'."""
+    return str(value).encode("ascii", "replace").decode("ascii")
 
 
 def fmt_time(seconds):
