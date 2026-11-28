@@ -13,6 +13,7 @@ import numpy as np
 
 from exercises import EXERCISES
 from pose_estimator import PoseEstimator, draw_skeleton
+from profiles import record_results
 from results_screen import show_results
 from ui import GREEN, GREY, ORANGE, WHITE, fmt_time, panel, text
 
@@ -174,9 +175,11 @@ def analyze_video(path, exercise_name, window):
     return results, True
 
 
-def run_video_analysis(path, exercise_name, window):
-    """Analyze a video and show the results. Returns False if the window was closed."""
+def run_video_analysis(path, exercise_name, window, store=None, profile_id=None):
+    """Analyze a video, save it to the profile (if one is selected) and show the results.
+    Returns False if the window was closed."""
     results, window_open = analyze_video(path, exercise_name, window)
     if results is not None and window_open:
+        record_results(store, profile_id, results, "free", "video")
         return show_results(window, results)
     return window_open
